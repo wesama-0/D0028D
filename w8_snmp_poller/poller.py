@@ -37,11 +37,17 @@ def validate_config(cfg):
         if not isinstance(target, dict):
             raise ValueError("target is no a dict")
 
-    if "name" not in target:
-        raise ValueError("name is not in target")
+        if "name" not in target:
+            raise ValueError("name is not in target")
 
-    if "ip" not in target:
-        raise ValueError("ip is not in target")
+        if "ip" not in target:
+            raise ValueError("ip is not in target")
+
+    for default in value_defaults:
+        if oids not in default:
+            raise ValueError("No oids, see yaml config file")
+
+
 
 #def merge_defaults(defaults, target):
 
