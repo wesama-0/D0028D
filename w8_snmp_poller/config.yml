@@ -17,3 +17,9 @@ targets:
   - name: "router2"
     ip: "10.0.0.2"
     community: "public"
+
+  - name: "AWLV"
+    ip: "172.16.0.251"
+    community: "public"
+    oids:
+      - "ifOperStatus.1"
