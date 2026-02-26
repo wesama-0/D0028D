@@ -22,4 +22,4 @@ targets:
     ip: "172.16.0.251"
     community: "public"
     oids:
-      - "ifOperStatus.1"
+      - "sysUpTime.0"

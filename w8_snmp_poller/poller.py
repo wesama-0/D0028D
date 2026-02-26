@@ -153,28 +153,89 @@ def build_snmpget_cmd(target, oid):
     cmd.append(oid)
     
     return cmd
+
 def run_snmpget(cmd, timeout_s):
     try:
-        snmp_result = subprocess.run(
+        result = subprocess.run(
             cmd,
-            capture_output=True,
-            text=True,
-            timeout=timeout_s
+            capture_output=True, #saveing the program writing out in variables instead of writing it directly in the terminal
+            text=True, #makeing the output to strings (text) instead of bytes
+            timeout=timeout_s #interupts if it take longer time than timeout_s seconds
         )
-        stdout = (snmp_result.stdout or "").strip()
-        stderr = (snmp_result.stderr or "").strip()
-        return snmp_result.returncode, stdout, stderr
+
+        return (
+            result.returncode,
+            result.stdout.strip(),
+            result.stderr.strip() 
+            )
     except subprocess.TimeoutExpired:
         return 124, "", "timeout"
     
+def poll_target(merged_dt): #poll a single target within a time budget.
+    
+    results = []
+    ok_count = 0
+    fail_count = 0
 
-#def poll_target(target):
+    start_time = time.monotonic()
+    budget_s = float(merged_dt["target_budget_s"])
 
+    for oid in merged_dt["oids"]:
+        #per-target budget check (stop if runing out of time)
+        elapsed = time.monotonic() - start_time
+        if elapsed >= budget_s: #record that stopped early due to budget
+            results.appen({
+                "oid": oid,
+                "status": "skipped",
+                "error": "target budget exceeded"
+            })
+            break
+
+        cmd = build_snmpget_cmd(merged_dt, oid)
+        rc, out, err = run_snmpget(cmd, merged_dt["timeout_s"])
+
+        if rc == 0: #if it is ok
+            ok_count += 1
+            results.append({
+                "oid": oid,
+                "status": "ok",
+                "value": out
+            })
+        
+        else: #if it fails
+            fail_count += 1
+            results.append({
+                "oid": oid,
+                "status": "fail",
+                "error": err
+                "rc": rc
+            })
+
+    duration_s = time.monotonic() - start_time
+
+    if ok_count > 0 and fail_count == 0:
+        status = "ok"
+    
+    if ok_count > 0 and fail_count > 0:
+        status = "partial"
+        
+    if ok_count == 0:
+        status = "failed"
+        
+    return {
+        "name": merged_dt.get("name"),
+        "ip": merged_dt.get("ip"),
+        "status": status,
+        "ok_count": ok_count,
+        "fail_count": fail_count,
+        "duration_s": round(duration_s, 3),
+        "results": results,
+    }
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--config", required=True, help="Path to configuration file")
-    args = parser.parse_args()
+    parser1 = argparse.ArgumentParser()
+    parser1.add_argument("--config", required=True, help="Path to configuration file")
+    args = parser1.parse_args()
    
     cfg = load_config(args.config)
     validate_config(cfg)
@@ -183,12 +244,13 @@ def main():
     targets = cfg["targets"]
 
     for target in targets:
-        effective = merge_defaults(defaults, target)
+        merged_dt = merge_defaults(defaults, target)
         if "oids" not in target:
-            effective["oids"] = defaults["oids"]
-        for oid in effective["oids"]:
-            cmd = build_snmpget_cmd(effective, oid)
-            rc, output_text, error_text = run_snmpget(cmd, effective["timeout_s"])
+            merged_dt["oids"] = defaults["oids"]
+        result = poll_target(merged_dt)
+        for oid in merged_dt["oids"]:
+            cmd = build_snmpget_cmd(merged_dt, oid)
+            rc, output_text, error_text = run_snmpget(cmd, merged_dt["timeout_s"])
             print("CMD:", cmd)
             print("RC:", rc)
             print("OUT:", output_text)
