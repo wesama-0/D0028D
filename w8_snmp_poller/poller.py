@@ -207,8 +207,8 @@ def poll_target(merged_dt): #poll a single target within a time budget.
             results.append({
                 "oid": oid,
                 "status": "fail",
-                "error": err
-                "rc": rc
+                "error": err,
+                "rc": rc,
             })
 
     duration_s = time.monotonic() - start_time
