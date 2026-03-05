@@ -3,6 +3,8 @@ import datetime
 import json
 import logging
 import subprocess
+import sys
+import time
 import yaml
 
 def load_config(path): #reading the yaml file
@@ -14,8 +16,8 @@ def load_config(path): #reading the yaml file
 
     return cfg
 
-def validate_config(cfg):
-    if not isinstance(cfg, dict) : #if it is not a dict
+def validate_config(cfg): #validate config structure
+    if not isinstance(cfg, dict) : #if config is not a dict
         raise ValueError("Config must be a dict")
 
     if "targets" not in cfg: #target have to be in the config
@@ -26,21 +28,19 @@ def validate_config(cfg):
 
     defaults = cfg["defaults"]
     targets = cfg["targets"]
-#validates default structure
-    if not isinstance(defaults, dict):
-        raise ValueError("default is not a dict")
 
-    if "timeout_s" not in defaults: #checking so timeouts are in defaults and that it is a number
+#validate defaults
+    if "timeout_s" not in defaults: #checking so timeouts are in defaults and that it is a number and biggger than 0
         raise ValueError("timeout_s are missing")
-    if not isinstance(defaults["timeout_s"], (int, float)) or defaults["timeout_s"] <= 0:
+    if not isinstance(defaults["timeout_s"], (int, float)) or defaults["timeout_s"] <= 0: 
         raise ValueError("timeout_s must be a number > 0")
     
-    if "target_budget_s" not in defaults: #checking so timeouts are in defaults and that it is a number
+    if "target_budget_s" not in defaults: #checking so timeouts are in defaults and that it is a number and bigger than 0
         raise ValueError("target_budget_s are missing")
     if not isinstance(defaults["target_budget_s"], (int, float)) or defaults["target_budget_s"] <= 0:
         raise ValueError("target_budget_s must be a number > 0")
 
-    if defaults["target_budget_s"] < defaults["timeout_s"]:
+    if defaults["target_budget_s"] < defaults["timeout_s"]: #budget must be >= timeout
         raise ValueError("target_budget_s has to be >= timeout_s")
 
     if "retries" not in defaults: #makeing sure retries is a whole positive number and are in defaults
@@ -48,45 +48,13 @@ def validate_config(cfg):
     if not isinstance(defaults["retries"], int) or defaults["retries"] < 0:
         raise ValueError("retires have to be a whole and positive number")
 
-    if "oids" not in defaults:
+    if "oids" not in defaults or not isinstance(defaults["oids"], list) or len(defaults["oids"]) == 0: #standard-OIDs
         raise ValueError("No oids in the default part")
 
-    default_oids = defaults["oids"]
+#validate targets 
+    if not isinstance(targets, list) or len(targets) == 0:
+        raise ValueError("targets must be a non-empty list")
 
-    if not isinstance(default_oids, list) or len(default_oids) == 0:
-        raise ValueError("defaults.oids must be a non-empty list")
-#ensure all oids are valid strings
-    for oid in default_oids:
-        if not isinstance(oid, str):
-            raise ValueError("oid is not a string")
-        if oid == "":
-            raise ValueError("oid is empty")
-
-#check OID format (numeric OR symbolic)
-        if oid.startswith(".") or oid.endswith("."):
-            raise ValueError(f"Invalid OID format: {oid}")
-        if " " in oid:
-            raise ValueError(f"Invalid OID format: {oid}")
-
-        if oid[0].isdigit():
-#numeric OID: digits separated by dots
-            parts = oid.split(".")
-            if "" in parts:
-                raise ValueError(f"Invalid OID format: {oid}")
-            for part in parts:
-                if not part.isdigit():
-                    raise ValueError(f"Invalid OID format: {oid}")
-        else:
-            #symbolic OID: require at least one dot (e.g. sysUpTime.0)
-            if "." not in oid:
-                raise ValueError(f"Invalid OID format: {oid}")
-
-#validate targets list
-    if not isinstance(targets, list):
-        raise ValueError("targets is not a list")
-
-    if len(targets) == 0:
-        raise ValueError("List is empty")
 
     required_field = ["ip", "name", "community"]
 
@@ -95,36 +63,6 @@ def validate_config(cfg):
         if not isinstance(target, dict): 
                 raise ValueError(f"{target} is not a dict")
         
-        #validate optional target-specific OIDs(override defaults)
-        if "oids" in target:
-            if not isinstance(target["oids"], list):
-                raise ValueError("oids is not a list")
-            if len(target["oids"]) == 0:
-                raise ValueError("the list of oids is empty")
-            for oid in target["oids"]:
-                if not isinstance(oid, str):
-                    raise ValueError("oids is not a string")
-                if oid == "":
-                    raise ValueError("oids is empty")
-                
-            #check OID format (numeric OR symbolic)
-                if oid.startswith(".") or oid.endswith("."):
-                    raise ValueError(f"Invalid OID format: {oid}")
-                if " " in oid:
-                    raise ValueError(f"Invalid OID format: {oid}")
-                if oid[0].isdigit():
-             #numeric OID: digits separated by dots
-                    parts = oid.split(".")
-                    if "" in parts:
-                        raise ValueError(f"Invalid OID format: {oid}")
-                    for part in parts:
-                        if not part.isdigit():
-                            raise ValueError(f"Invalid OID format: {oid}")
-                else:
-             #symbolic OID: require at least one dot (e.g. sysUpTime.0)
-                    if "." not in oid:
-                        raise ValueError(f"Invalid OID format: {oid}")
-
         #validate required fields for each target             
         for field in required_field: #controls requierd fields
             if field not in target:
@@ -132,29 +70,34 @@ def validate_config(cfg):
             if not isinstance(target[field], str):
                 raise ValueError (f"{field} is not a string!")
             if target[field] == "":
-                raise ValueError (f"{field} is empty!")         
+                raise ValueError (f"{field} is empty!")
+        
+        #validate optional target-specific OIDs(override defaults)
+        if "oids" in target:
+            if not isinstance(target["oids"], list) or len(target["oids"]) == 0:
+                raise ValueError("target.oids must be a non-empty list ")
 
-def merge_defaults(defaults, target): #merge target configuration with defualts
+def merge_defaults(defaults, target): #merge defaults with target-specific overrides
     effective = defaults.copy() #a new dictionary is returned to avoid modifying the original one
     effective.update(target) #target-specific values override defaults
     return effective
 
-def build_snmpget_cmd(target, oid):
+def build_snmpget_cmd(target, oid): #build SNMP command
     cmd = []
     cmd.append("snmpget")
-    cmd.append("-v2c")
+    cmd.append("-v2c") 
     cmd.append("-c")
     cmd.append(target["community"])
-    cmd.append("-t")
-    cmd.append(str(target["timeout_s"]))
-    cmd.append("-r")
-    cmd.append(str(target["retries"]))
-    cmd.append(target["ip"])
-    cmd.append(oid)
+    cmd.append("-t") #timeout per request
+    cmd.append(str(target["timeout_s"])) 
+    cmd.append("-r") #SNMPGET retries 
+    cmd.append("0") #SNMPGET must not retry
+    cmd.append(target["ip"]) #target IP
+    cmd.append(oid) #OID to get
     
     return cmd
 
-def run_snmpget(cmd, timeout_s):
+def run_snmpget(cmd, timeout_s): #run SNMP command
     try:
         result = subprocess.run(
             cmd,
@@ -163,12 +106,9 @@ def run_snmpget(cmd, timeout_s):
             timeout=timeout_s #interupts if it take longer time than timeout_s seconds
         )
 
-        return (
-            result.returncode,
-            result.stdout.strip(),
-            result.stderr.strip() 
-            )
-    except subprocess.TimeoutExpired:
+        return result.returncode, result.stdout.strip(), result.stderr.strip() 
+
+    except subprocess.TimeoutExpired: #Python-timeout (snmpget dosen´t respond on time)
         return 124, "", "timeout"
     
 def poll_target(merged_dt): #poll a single target within a time budget.
@@ -180,82 +120,168 @@ def poll_target(merged_dt): #poll a single target within a time budget.
     start_time = time.monotonic()
     budget_s = float(merged_dt["target_budget_s"])
 
+    logging.info(f"Staring target {merged_dt['name']} ({merged_dt['ip']})")
+
     for oid in merged_dt["oids"]:
         #per-target budget check (stop if runing out of time)
         elapsed = time.monotonic() - start_time
         if elapsed >= budget_s: #record that stopped early due to budget
-            results.appen({
-                "oid": oid,
-                "status": "skipped",
-                "error": "target budget exceeded"
-            })
+            logging.warning(f"{merged_dt['name']}: budget exceeded, skipping remaining OIDs")
+
+            #marking all remaining OIDs as skipped
+            remaining = merged_dt["oids"][merged_dt["oids"].index(oid):]
+            for o in remaining:
+                results.append({
+                    "oid": o,
+                    "status": "skipped",
+                    "error": "target budget exceeded"
+                })
             break
 
         cmd = build_snmpget_cmd(merged_dt, oid)
-        rc, out, err = run_snmpget(cmd, merged_dt["timeout_s"])
+        
+        #retry-loop (only timeout/unreachable)
+        attempts = merged_dt["retries"] + 1
+        for attempt in range(attempts):
+            rc, output_text, error_text = run_snmpget(cmd, merged_dt["timeouts"])
 
-        if rc == 0: #if it is ok
+            err_l = (error_text or "").lower()
+            is_timeout = (error_text == "timeout") or ("timeout" in err_l)
+
+        if rc == 0: #if it is success
             ok_count += 1
             results.append({
                 "oid": oid,
                 "status": "ok",
-                "value": out
+                "value": output_text
             })
+            break
         
-        else: #if it fails
+        if is_timeout and attempt < attempts -1: #only retries at timeout/unreachable
+            logging.warning(f"{merged_dt['name']} OID {oid}: timeout, retrying...")
+            continue
+        
+        if "authentication" in err_l or "unknown user" in err_l: #fail-fast on auth
+            logging.error(f"{merged_dt['name']}: authentication failure")
             fail_count += 1
             results.append({
                 "oid": oid,
                 "status": "fail",
-                "error": err,
-                "rc": rc,
+                "error": error_text
             })
+        #interupt the entire target directly
+            duration_s = round(time.monotonic() - start_time, 3)
+            return {
+                "name": merged_dt["name"],
+                "ip": merged_dt["ip"],
+                "status": "failed",
+                "ok_count": ok_count,
+                "fail_count": fail_count,
+                "duration_s": duration_s,
+                "results": results,
+            }
+        
+        #other fails (no retry)
+        fail_count += 1
+        results. append ({
+            "oid": oid,
+            "status": "fail",
+            "error": error_text
+        })
+        break
 
-    duration_s = time.monotonic() - start_time
+    #target done
+    duration_s = round(time.monotonic() - start_time, 3)
 
+    #determine status
     if ok_count > 0 and fail_count == 0:
         status = "ok"
-    
-    if ok_count > 0 and fail_count > 0:
+    elif ok_count > 0:
         status = "partial"
-        
-    if ok_count == 0:
+    else:
         status = "failed"
-        
+    
+    logging.info(f"Finished target {merged_dt['name']} status={status} duration={duration_s}s")
+
     return {
-        "name": merged_dt.get("name"),
-        "ip": merged_dt.get("ip"),
+        "name": merged_dt["name"],
+        "ip": merged_dt["ip"],
         "status": status,
         "ok_count": ok_count,
         "fail_count": fail_count,
-        "duration_s": round(duration_s, 3),
+        "duration_s": duration_s,
         "results": results,
     }
 
-def main():
-    parser1 = argparse.ArgumentParser()
-    parser1.add_argument("--config", required=True, help="Path to configuration file")
-    args = parser1.parse_args()
-   
-    cfg = load_config(args.config)
-    validate_config(cfg)
-
+def main(): #mainprogram
+    #CLI, logging, doing all of the targets, JSON-output and exit codes
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config", required=True)
+    parser.add_argument("--out", required=True)
+    parser.add_argument("--log-level", default="INFO")
+    args = parser.parse_args()
+    
+    #basic logging setup
+    logging.basicConfig(
+        level=args.log_level.upper(),
+        format="%(asctime)s %(levelname)s %(message)s"
+    )
+    #load and validate config
+    try:
+        cfg = load_config(args.config)
+        validate_config(cfg)
+    except ValueError as e:
+        logging.error(f"Invalid configuration: {e}")
+        sys.exit(2) #config error --> exit code 2
+    
     defaults = cfg["defaults"]
     targets = cfg["targets"]
+    
+    logging.info(f"Starting run with {len(targets)} targets")
 
+    run_start = time.time()
+    all_results = []
+
+    #poll all targets
     for target in targets:
         merged_dt = merge_defaults(defaults, target)
+
+        #ensure OIDs exist (target override else defaults)
         if "oids" not in target:
             merged_dt["oids"] = defaults["oids"]
+        
         result = poll_target(merged_dt)
-        for oid in merged_dt["oids"]:
-            cmd = build_snmpget_cmd(merged_dt, oid)
-            rc, output_text, error_text = run_snmpget(cmd, merged_dt["timeout_s"])
-            print("CMD:", cmd)
-            print("RC:", rc)
-            print("OUT:", output_text)
-            print("ERR:", error_text)
-            print("---")
+        all_results.append(result)
+    
+    #exit code logic
+    any_ok = any(t["ok_count"] > 0 for t in all_results)
+    any_fail = any(t["fail_count"] > 0 for t in all_results)
+
+    if any_ok and not any_fail:
+        exit_code = 0
+    elif any_ok and any_fail:
+        exit_code = 1
+    else:
+        exit_code = 2
+    
+    #JSON output
+    output = {
+        "timestamp": datetime.datetime.utcnow().isoformat(),
+        "config":args.config,
+        "duration_s": round(time.time() - run_start, 3),
+        "targets": all_results,
+    }
+
+    #writing JSON to file or stdout
+    if args.out == "-":
+        print(json.dumps(output, indent=2))
+    else:
+        with open(args.out, "w", encoding="utf-8") as f:
+            json.dump(output, f, indent=2)
+    
+    logging.info(f"Run complete. Exit code {exit_code}")
+    sys.exit(exit_code)
+
 
 if __name__ == "__main__":
     main()
