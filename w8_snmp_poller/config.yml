@@ -14,8 +14,8 @@ targets:
     oids:
       - "ifOperStatus.1"
 
-  - name: "router2"
-    ip: "10.0.0.2"
+  - name: "Stina"
+    ip: "172.16.0.235"
     community: "public"
 
   - name: "AWLV"
@@ -23,3 +23,9 @@ targets:
     community: "public"
     oids:
       - "sysUpTime.0"
+
+  - name: "Dominic"
+    ip: "172.16.0.240"
+    community: "public"
+    oids:
+      - "sysName.0"

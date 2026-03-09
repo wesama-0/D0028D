@@ -35,7 +35,7 @@ def validate_config(cfg): #validate config structure
     if not isinstance(defaults["timeout_s"], (int, float)) or defaults["timeout_s"] <= 0: 
         raise ValueError("timeout_s must be a number > 0")
     
-    if "target_budget_s" not in defaults: #checking so timeouts are in defaults and that it is a number and bigger than 0
+    if "target_budget_s" not in defaults: #checking so target budget/s are in defaults and that it is a number and bigger than 0
         raise ValueError("target_budget_s are missing")
     if not isinstance(defaults["target_budget_s"], (int, float)) or defaults["target_budget_s"] <= 0:
         raise ValueError("target_budget_s must be a number > 0")
@@ -120,7 +120,7 @@ def poll_target(merged_dt): #poll a single target within a time budget.
     start_time = time.monotonic()
     budget_s = float(merged_dt["target_budget_s"])
 
-    logging.info(f"Staring target {merged_dt['name']} ({merged_dt['ip']})")
+    logging.info(f"Starting target {merged_dt['name']} ({merged_dt['ip']})")
 
     for oid in merged_dt["oids"]:
         #per-target budget check (stop if runing out of time)
@@ -266,7 +266,7 @@ def main(): #mainprogram
     
     #JSON output
     output = {
-        "timestamp": datetime.datetime.utcnow().isoformat(),
+        "timestamp": datetime.datetime.now(datetime.UTC).isoformat(),
         "config":args.config,
         "duration_s": round(time.time() - run_start, 3),
         "targets": all_results,
