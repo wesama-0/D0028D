@@ -143,7 +143,7 @@ def poll_target(merged_dt): #poll a single target within a time budget.
         #retry-loop (only timeout/unreachable)
         attempts = merged_dt["retries"] + 1
         for attempt in range(attempts):
-            rc, output_text, error_text = run_snmpget(cmd, merged_dt["timeouts"])
+            rc, output_text, error_text = run_snmpget(cmd, merged_dt["timeout_s"])
 
             err_l = (error_text or "").lower()
             is_timeout = (error_text == "timeout") or ("timeout" in err_l)
