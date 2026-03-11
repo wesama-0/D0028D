@@ -109,19 +109,33 @@ Exit codes:
 The application runs in the following order:
 
 main
+
 ↓
+
 load_config
+
 ↓
+
 validate_config
+
 ↓
+
 merge_defaults
+
 ↓
+
 poll_target
+
 ↓
+
    build_snmpget_cmd
+   
    ↓
+   
    run_snmpget
+
 ↓
+
 write JSON output
 
 # Summary
