@@ -91,15 +91,6 @@ Output to stdout:
 python3 poller.py --config config.yml --out -
 ```
 
-
-Exit codes:
-
-0 - all targets succeeded
-
-1 - partial success (some OIDs failed)
-
-2 - total failure or invalid configuration. 
-
 Arguments:
 --config
 Specifies the path to the YAML configuration file.
@@ -111,7 +102,15 @@ Controls the amount of logging information printed to the terminal
 
    * INFO: Normal runtime information such as when a targets start and finish polling. 
    * WARNING: Indicates potential issues such as timeouts or retries. 
-   * ERROR: Serious problems such as authentication failures or invalid configuration. 
+   * ERROR: Serious problems such as authentication failures or invalid configuration.
+
+Exit codes:
+
+0 - all targets succeeded
+
+1 - partial success (some OIDs failed)
+
+2 - total failure or invalid configuration. 
 
 
 # Program Flow
