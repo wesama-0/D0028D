@@ -83,10 +83,14 @@ Create enviornment:
 
 # Running:
 Basic usage: 
+```
 python3 poller-py --config config.yml --out result.json
-
+```
 Output to stdout:
+```
 python3 poller.py --config config.yml --out -
+```
+
 
 Exit codes:
 0 - all targets succeeded
