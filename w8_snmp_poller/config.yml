@@ -26,6 +26,6 @@ targets:
 
   - name: "Dominic"
     ip: "172.16.0.240"
-    community: "public"
+    community: "B314"
     oids:
       - "sysName.0"
