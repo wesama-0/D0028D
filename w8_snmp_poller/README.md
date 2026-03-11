@@ -88,9 +88,6 @@ python3 poller-py --config config.yml --out result.json
 Output to stdout:
 python3 poller.py --config config.yml --out -
 
-Debug logging: 
-python3 poller.py --config config.yml --out result.json --log-level DEBUG
-
 Exit codes:
 0 - all targets succeeded
 1 - partial success (some OIDs failed)
