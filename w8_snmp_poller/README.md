@@ -1,25 +1,25 @@
 #SNMP Poller
 
 
-#About the application:
+#About:
 This application is a lightweight SNMP poller written in Python.
 
-It reads a YAML configuration file that contains default settings and a list of network targets to poll. For each target the program performs SNMP GET requests and collects the results.
+It reads a YAML configuration file that contains default settings and a list of network targets. For each target, the program performs SNMP GET requests and collects the results.
 
-The poller includes retry handling, timeout control and a per-target time budget. The results are written as structured JSON output.
+The poller includes retry handling, timeout control and a per-target time budget. Results are written as structured JSON output.
 
 #Files:
 poller.py
-The main application. Handles configuration loading, validation, SNMP polling, retry logic, time-budget enforcement, JSON output, and exit codes.
+Main application. Handles configuration loading, validation, SNMP polling, retry logic, time-budget enforcement, JSON output, and exit codes.
 
 config.yml
-The configuration file defining default values (timeouts, retries, OIDs) and the list of SNMP targets to poll.
+Configuration file defining default values (timeouts, retries, OIDs) and the list of SNMP targets.
 
 test_config.py
-Unit tests verifying that the configuration validation behaves correctly for valid and invalid YAML files. 
+Unit tests verifying configuration validation for valid and invalid configs. 
 
 README.md
-Documentation describing the application, structure, methods, installation, and usage. 
+Documentation for installation, structure, and usage. 
 
 #Methods:
 load_config(path)
@@ -73,22 +73,31 @@ Output: JSON file or stdout + exit code
 
 Description: Coordinates the entire application. It parses CLI arguments, loads and validates config, polls all targets, writes JSON output, sets exit code (0/1/2) based on results.
 
-Installation:
+#Installation:
 Requirements:
- Linux enviornment, Python 3.8 or newer, Net-SNMP tools (snmpget), Python package: pyyaml
+ * Linux enviornment
+ * Python 3.8+
+ * Net-SNMP tools (snmpget)
+ * Python package: pyyaml
 
-Install dependencies
-sudo apt-get update
-sudo apt-get install -y snmp python3 python3-venv
+Install dependencies:
+ * sudo apt-get update
+ * sudo apt-get install -y snmp python3 python3-venv
 
-python3 -m venv .venv
-source .venv/bin/activate
-pip install pyyaml
+Create enviornment:
+ * python3 -m venv .venv
+ * source .venv/bin/activate
+ * pip install pyyaml
 
-Running:
-Basic usage: python3 poller-py --config config.yml --out result.json
-Output to stdout: python3 poller.py --config config.yml --out -
-Change log level: python3 poller.py --config config.yml --out result.json --log-level DEBUG
+#Running:
+Basic usage: 
+python3 poller-py --config config.yml --out result.json
+
+Output to stdout:
+python3 poller.py --config config.yml --out -
+
+Debug logging: 
+python3 poller.py --config config.yml --out result.json --log-level DEBUG
 
 Exit codes:
 0 - all targets succeeded
@@ -109,9 +118,9 @@ merge_defaults
 ↓
 poll_target
 ↓
-build_snmpget_cmd
-↓
-run_snmpget
+   build_snmpget_cmd
+   ↓
+   run_snmpget
 ↓
 write JSON output
 
