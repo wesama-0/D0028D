@@ -92,13 +92,21 @@ python3 poller.py --config config.yml --out -
 ```
 
 Arguments:
+
 --config
+
 Specifies the path to the YAML configuration file.
+
+
 --out
+
 Defines the output location for the JSON results.
 Use - to send the output to stdout instead of writing to a file.
+
+
 --log-level
 Controls the amount of logging information printed to the terminal
+
 
    * INFO: Normal runtime information such as when a targets start and finish polling. 
    * WARNING: Indicates potential issues such as timeouts or retries. 
