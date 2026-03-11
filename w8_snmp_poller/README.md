@@ -23,55 +23,47 @@ Documentation for installation, structure, and usage.
 
 #Methods:
 load_config(path)
-Input: file path (string)
-Output: Python dictionary
-
-Description: load and parses the YAML configuration file. Raises an error if the file is empty.
+ * Input: file path (string)
+ * Output: Python dictionary
+ * Description: load and parses the YAML configuration file. Raises an error if the file is empty.
 
 validate_config(cfg)
-Input: configuration dictionary
-Output: none (raises ValueError on invalid config)
-
-Description: ensures that required fields exist, types are correct, numeric values are positive, and targets contain valid entries. This prevents the application from running with invalid settings.
+ * Input: configuration dictionary
+ * Output: none (raises ValueError on invalid config)
+ * Description: ensures that required fields exist, types are correct, numeric values are positive, and targets contain valid entries. This prevents the application from running with invalid settings.
 
 merge_defaults(defaults, target)
-Input: two dictionaries
-Output: merged dictionary
-
-Description: combines default settings with target-specific overrides. Target values replace defaults when present. 
+ * Input: two dictionaries
+ * Output: merged dictionary
+ * Description: combines default settings with target-specific overrides. Target values replace defaults when present. 
 
 build_snmpget_cmd(target, oid)
-Input: target dictionary, OID string
-Output: list of command argumetns
-
-Description: constructs the snmpget command for a specific target and OID. SNMP retries are disabled (-r 0) because retry logic is handled in Python. 
+ * Input: target dictionary, OID string
+ * Output: list of command argumetns
+ * Description: constructs the snmpget command for a specific target and OID. SNMP retries are disabled (-r 0) because retry logic is handled in Python. 
 
 run_snmpget(cmd, timeout_s)
-Input: command list, timeout(float)
-Output: (returncode, stdout, stderr)
-
-Description: executes the SNMP command using subprocess.run(). Returns "timeout" on Python-level timeout. 
+ * Input: command list, timeout(float)
+ * Output: (returncode, stdout, stderr)
+ * Description: executes the SNMP command using subprocess.run(). Returns "timeout" on Python-level timeout. 
 
 poll_target(merged_t)
-Input: merged target dictionary  
-Output: result dictionary for one target
-
-Description:
-Polls all configured OIDs for a target device within a defined time budget.
+ * Input: merged target dictionary  
+ * Output: result dictionary for one target
+ * Description: Polls all configured OIDs for a target device within a defined time budget.
 
 The function handles:
-*retries when a timeout occurs
-*unreachable devices
-*authentication errors (stos polling immediately)
-*skipping remaining OIDs if the time budget is exceeded
+ * retries when a timeout occurs
+ * unreachable devices
+ * authentication errors (stos polling immediately)
+ * skipping remaining OIDs if the time budget is exceeded
 
 It also collects the results and determines the final status of the target.
 
 main()
-Input: command-line arguments
-Output: JSON file or stdout + exit code
-
-Description: Coordinates the entire application. It parses CLI arguments, loads and validates config, polls all targets, writes JSON output, sets exit code (0/1/2) based on results.
+ * Input: command-line arguments
+ * Output: JSON file or stdout + exit code
+ * Description: Coordinates the entire application. It parses CLI arguments, loads and validates config, polls all targets, writes JSON output, sets exit code (0/1/2) based on results.
 
 #Installation:
 Requirements:
