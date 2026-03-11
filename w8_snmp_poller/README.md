@@ -73,13 +73,17 @@ Requirements:
  * Python package: pyyaml
 
 Install dependencies:
- * sudo apt-get update
- * sudo apt-get install -y snmp python3 python3-venv
+```
+ sudo apt-get update
+ sudo apt-get install -y snmp python3 python3-venv
+```
 
 Create enviornment:
- * python3 -m venv .venv
- * source .venv/bin/activate
- * pip install pyyaml
+```
+ python3 -m venv .venv
+ source .venv/bin/activate
+ pip install pyyaml
+```
 
 # Running:
 Basic usage: 
