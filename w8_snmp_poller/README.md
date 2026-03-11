@@ -1,14 +1,14 @@
-#SNMP Poller
+# SNMP Poller
 
 
-#About:
+# About:
 This application is a lightweight SNMP poller written in Python.
 
 It reads a YAML configuration file that contains default settings and a list of network targets. For each target, the program performs SNMP GET requests and collects the results.
 
 The poller includes retry handling, timeout control and a per-target time budget. Results are written as structured JSON output.
 
-#Files:
+# Files:
 poller.py
 Main application. Handles configuration loading, validation, SNMP polling, retry logic, time-budget enforcement, JSON output, and exit codes.
 
@@ -21,7 +21,7 @@ Unit tests verifying configuration validation for valid and invalid configs.
 README.md
 Documentation for installation, structure, and usage. 
 
-#Methods:
+# Methods:
 load_config(path)
  * Input: file path (string)
  * Output: Python dictionary
@@ -65,7 +65,7 @@ main()
  * Output: JSON file or stdout + exit code
  * Description: Coordinates the entire application. It parses CLI arguments, loads and validates config, polls all targets, writes JSON output, sets exit code (0/1/2) based on results.
 
-#Installation:
+# Installation:
 Requirements:
  * Linux enviornment
  * Python 3.8+
@@ -81,7 +81,7 @@ Create enviornment:
  * source .venv/bin/activate
  * pip install pyyaml
 
-#Running:
+# Running:
 Basic usage: 
 python3 poller-py --config config.yml --out result.json
 
@@ -93,7 +93,7 @@ Exit codes:
 1 - partial success (some OIDs failed)
 2 - total failure or invalid configuration. 
 
-#Program Flow
+# Program Flow
 
 The application runs in the following order:
 
@@ -113,7 +113,7 @@ poll_target
 ↓
 write JSON output
 
-#Summary
+# Summary
 This SNMP poller reads a YAML configuration file, polls network devices using SNMP GET requests, and outputs the results as structured JSON.
 
 The application includes retry logic, timeout handling and configuration validation, making it suitable for automated monitoring and network diagnostics.
