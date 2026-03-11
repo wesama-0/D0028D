@@ -97,11 +97,18 @@ Exit codes:
 1 - partial success (some OIDs failed)
 2 - total failure or invalid configuration. 
 
-# log level
+Arguments:
+--config
+Specifies the path to the YAML configuration file.
+--out
+Defines the output location for the JSON results.
+Use - to send the output to stdout instead of writing to a file.
+--log-level
+Controls the amount of logging information printed to the terminal
 
-* INFO: Normal runtime information such as when a targets start and finish polling. 
-* WARNING: Indicates potential issues such as timeouts or retries. 
-* ERROR: Serious problems such as authentication failures or invalid configuration. 
+   * INFO: Normal runtime information such as when a targets start and finish polling. 
+   * WARNING: Indicates potential issues such as timeouts or retries. 
+   * ERROR: Serious problems such as authentication failures or invalid configuration. 
 
 
 # Program Flow
