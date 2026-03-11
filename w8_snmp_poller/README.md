@@ -93,8 +93,11 @@ python3 poller.py --config config.yml --out -
 
 
 Exit codes:
+
 0 - all targets succeeded
+
 1 - partial success (some OIDs failed)
+
 2 - total failure or invalid configuration. 
 
 Arguments:
