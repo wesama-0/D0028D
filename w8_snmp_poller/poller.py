@@ -7,7 +7,7 @@ import sys
 import time
 import yaml
 
-# funktion: load_config
+# function: load_config
 # description: Loads and parses the YAML configuration file.
 # input: path (str) - path to the YAML configuration file.
 # output: dict - parsed configuration dictionary.
