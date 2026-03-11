@@ -7,6 +7,11 @@ import sys
 import time
 import yaml
 
+# funktion: load_config
+# description: Loads and parses the YAML configuration file.
+# input: path (str) - path to the YAML configuration file.
+# output: dict - parsed configuration dictionary.
+# raises: ValueError if the configuration file is empty
 def load_config(path): #reading the yaml file
     with open(path, "r", encoding="utf-8") as yml: #load and parse the YAML configuration file
         cfg = yaml.safe_load(yml)
@@ -16,6 +21,12 @@ def load_config(path): #reading the yaml file
 
     return cfg
 
+# function: validate_config
+# description: validates the structure and content of the configuration. 
+# ensures required fields exist, types are correct and numeric values are valid.
+# input: cfg(dict) - configuration dictionary. 
+# output: none
+# raises: ValueError if the config is invalid
 def validate_config(cfg): #validate config structure
     if not isinstance(cfg, dict) : #if config is not a dict
         raise ValueError("Config must be a dict")
@@ -76,12 +87,21 @@ def validate_config(cfg): #validate config structure
         if "oids" in target:
             if not isinstance(target["oids"], list) or len(target["oids"]) == 0:
                 raise ValueError("target.oids must be a non-empty list ")
-
+                
+# function: merge_defaults
+# description: combines default config values
+# target values override defaults when present
+# input: defaults (dict), target (dict)
+# output: dict - merged configuration dictionary
 def merge_defaults(defaults, target): #merge defaults with target-specific overrides
     effective = defaults.copy() #a new dictionary is returned to avoid modifying the original one
     effective.update(target) #target-specific values override defaults
     return effective
-
+    
+# function: build_snmpget_cmd
+# description: builds the SNMPGET command used to query an OID on a target device
+# input: target(dict), oid (str)
+# output: list - command arguments for subprocces.run().
 def build_snmpget_cmd(target, oid): #build SNMP command
     cmd = []
     cmd.append("snmpget")
@@ -97,6 +117,10 @@ def build_snmpget_cmd(target, oid): #build SNMP command
     
     return cmd
 
+# function: run_snmpget
+# description: executes the SNMPGET command and captures the results
+# input: cmd (list), timeout_s (float)
+# output: tuple - (returncode, stdout, stderr)
 def run_snmpget(cmd, timeout_s): #run SNMP command
     try:
         result = subprocess.run(
@@ -110,7 +134,12 @@ def run_snmpget(cmd, timeout_s): #run SNMP command
 
     except subprocess.TimeoutExpired: #Python-timeout (snmpget dosen´t respond on time)
         return 124, "", "timeout"
-    
+
+# function: poll_target
+# description: polls all configured OIDs for a target device within a time budget
+# handles retries, timeouts, authentication errors and collects results
+# input: merged_dt (dict) - merged target configuration
+# output: dict - result object containing status, counts and OID results
 def poll_target(merged_dt): #poll a single target within a time budget.
     
     results = []
@@ -213,6 +242,11 @@ def poll_target(merged_dt): #poll a single target within a time budget.
         "results": results,
     }
 
+# function: main
+# description: entry point of the application
+# handles CLI arguments, load and validates configuration, polls all targets, writes JSON output and sets exit codes. 
+# input: command-line arguments (--config, --out, --log-level)
+# output: JSON output + program exit code
 def main(): #mainprogram
     #CLI, logging, doing all of the targets, JSON-output and exit codes
     parser = argparse.ArgumentParser()
